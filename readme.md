@@ -84,6 +84,9 @@ ollama run llama3
 - Email integration (e.g. Gmail API)
 - Enhanced prompt templates for different message types
 
+## Preview
+<img width="1509" height="823" alt="messagecomposer_example" src="https://github.com/user-attachments/assets/04ba16c5-b712-4d97-ae43-319b05bd777a" />
+
 ## 🧑‍💻 Made by Syazwan Hanif
 
 Built as a productivity booster for educators, internship coordinators, and cold outreach professionals. Feel free to fork, adapt, or collaborate.
