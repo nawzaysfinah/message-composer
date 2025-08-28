@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Message Composer</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>📨 Internship Message Composer</h1>
+
+      <div class="main-content" style="display: flex; gap: 2rem">
+        <div style="flex: 1">
+          <form id="messageForm">
+            <div class="field-group">
+              <label for="contact_name">Contact Name</label>
+              <input type="text" id="contact_name" />
+            </div>
+
+            <div class="field-group">
+              <label for="job_title">Job Title</label>
+              <input type="text" id="job_title" />
+            </div>
+
+            <div class="field-group">
+              <label for="company_name">Company Name</label>
+              <input type="text" id="company_name" />
+            </div>
+
+            <div class="field-group">
+              <label for="job_link">Job Link</label>
+              <input type="text" id="job_link" />
+            </div>
+
+            <div class="field-group">
+              <label for="student_name">Student Name</label>
+              <input type="text" id="student_name" />
+            </div>
+
+            <div class="field-group">
+              <label for="project_title">Project Title</label>
+              <input type="text" id="project_title" />
+            </div>
+
+            <div class="field-group">
+              <label>Internship Period</label>
+              <div class="toggle-group">
+                <button
+                  type="button"
+                  class="toggle-btn"
+                  data-value="6th Oct 2025 – 20th Feb 2026 (20 weeks)"
+                >
+                  6th Oct 2025 – 20th Feb 2026 (20 weeks)
+                </button>
+                <button
+                  type="button"
+                  class="toggle-btn"
+                  data-value="6th Oct 2025 - 12th Dec 2025 (10 weeks)"
+                >
+                  6th Oct 2025 - 12th Dec 2025 (10 weeks)
+                </button>
+                <button
+                  type="button"
+                  class="toggle-btn"
+                  data-value="12th Jan 2026 - 29th Dec 2026 (20 weeks)"
+                >
+                  12th Jan 2026 - 29th Dec 2026 (20 weeks)
+                </button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="student_pitch">Student Pitch</label>
+              <textarea id="student_pitch"></textarea>
+            </div>
+          </form>
+
+          <div class="tools">
+            <button id="addChunkBtn">➕ Add Custom Chunk</button>
+            <button id="rewriteBtn">✨ Rewrite with AI</button>
+            <select id="chunkFilter">
+              <option value="all">All Chunks</option>
+              <option value="default">Default</option>
+              <option value="custom">Custom</option>
+            </select>
+            <button id="copyBtn">📋 Copy</button>
+            <button id="downloadTxt">⬇️ .txt</button>
+            <button id="downloadMd">⬇️ .md</button>
+          </div>
+        </div>
+        <div class="preview-box" style="flex: 1">
+          <h2>✏️ Message Preview</h2>
+          <pre
+            id="preview"
+            style="
+              white-space: pre-wrap;
+              word-wrap: break-word;
+              overflow-x: hidden;
+            "
+          ></pre>
+        </div>
+      </div>
+
+      <section>
+        <h2>📦 Message Blocks</h2>
+        <div id="chunkList"></div>
+      </section>
+    </div>
+
+    <div id="chunkModal" class="modal hidden">
+      <div class="modal-content">
+        <textarea
+          id="chunkText"
+          placeholder="Enter your custom chunk..."
+        ></textarea>
+        <div class="modal-buttons">
+          <button id="saveChunk">💾 Save</button>
+          <button id="cancelChunk">❌ Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
