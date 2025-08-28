@@ -1,0 +1,39 @@
+# Node.js
+node_modules/
+.env
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# OS-specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# Chunk data
+/public/chunks.json
+
+# Local Dev Tools
+.idea/
+.vscode/
+*.swp
+
+# Ollama temp & cache (optional)
+ollama-cache/
+ollama-output/
