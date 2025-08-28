@@ -17,31 +17,49 @@
               <label for="contact_name">Contact Name</label>
               <input type="text" id="contact_name" />
             </div>
+            <br />
 
             <div class="field-group">
-              <label for="job_title">Job Title</label>
+              <label for="job_title">Job Title (Internship Role)</label>
               <input type="text" id="job_title" />
             </div>
+            <br />
 
             <div class="field-group">
               <label for="company_name">Company Name</label>
               <input type="text" id="company_name" />
             </div>
+            <br />
 
             <div class="field-group">
-              <label for="job_link">Job Link</label>
-              <input type="text" id="job_link" />
+              <label for="job_link">Job Posting Link</label>
+              <input
+                type="text"
+                id="job_link"
+                placeholder="Paste URL of job posting"
+              />
             </div>
+            <br />
 
             <div class="field-group">
-              <label for="student_name">Student Name</label>
-              <input type="text" id="student_name" />
+              <label for="student_name">Student Name (optional)</label>
+              <input
+                type="text"
+                id="student_name"
+                placeholder="Leave blank if general"
+              />
             </div>
+            <br />
 
             <div class="field-group">
-              <label for="project_title">Project Title</label>
-              <input type="text" id="project_title" />
+              <label for="project_title">Project Title (optional)</label>
+              <input
+                type="text"
+                id="project_title"
+                placeholder="Relevant project if any"
+              />
             </div>
+            <br />
 
             <div class="field-group">
               <label>Internship Period</label>
@@ -69,10 +87,14 @@
                 </button>
               </div>
             </div>
+            <br />
 
             <div class="field-group">
               <label for="student_pitch">Student Pitch</label>
-              <textarea id="student_pitch"></textarea>
+              <textarea
+                id="student_pitch"
+                placeholder="Write a brief pitch or introduction for the student(s)"
+              ></textarea>
             </div>
           </form>
 
@@ -89,6 +111,7 @@
             <button id="downloadMd">⬇️ .md</button>
           </div>
         </div>
+
         <div class="preview-box" style="flex: 1">
           <h2>✏️ Message Preview</h2>
           <pre

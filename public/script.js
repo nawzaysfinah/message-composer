@@ -67,7 +67,7 @@ function updatePreview() {
   const formData = {};
   inputs.forEach((id) => {
     if (id === "internship_period") {
-      formData[id] = selectedInternshipPeriod;
+      formData[id] = selectedInternshipPeriods.join(", ");
     } else {
       formData[id] = document.getElementById(id).value.trim();
     }
@@ -85,11 +85,11 @@ function updatePreview() {
     sentence += ` to explore potential internship opportunities`;
 
     if (formData.company_name && formData.job_title) {
-      sentence += ` at ${formData.company_name}, where you're currently the ${formData.job_title}`;
+      sentence += ` at ${formData.company_name}, for the ${formData.job_title} role`;
     } else if (formData.company_name) {
       sentence += ` at ${formData.company_name}`;
     } else if (formData.job_title) {
-      sentence += ` with your role as ${formData.job_title}`;
+      sentence += ` for the ${formData.job_title} role`;
     }
   }
 
@@ -102,14 +102,13 @@ function updatePreview() {
     formData.project_title ||
     formData.student_pitch
   ) {
-    pitch += `I have a student, ${
-      formData.student_name || "one of our top students"
-    }`;
-
+    pitch += "I have a student";
+    if (formData.student_name) {
+      pitch += `, ${formData.student_name}`;
+    }
     if (formData.project_title) {
       pitch += `, who recently worked on a project titled "${formData.project_title}"`;
     }
-
     pitch += `. `;
 
     if (formData.student_pitch) {
@@ -125,7 +124,7 @@ function updatePreview() {
   // Job link sentence
   let link = "";
   if (formData.job_link) {
-    link = `You can refer to the role here: ${formData.job_link}\n\n`;
+    link = `Here is the job listing posted by your team: ${formData.job_link}\n\n`;
   }
 
   // Internship period
@@ -149,24 +148,26 @@ function updatePreview() {
       fullMessage += chunk.text + "\n\n";
     });
 
+  fullMessage += `You can learn more about the course here:\n👉 Higher Nitec in AI Applications – Course Overview: https://www.ite.edu.sg/courses/course-finder/course/higher-nitec-in-ai-applications\nIf you're open to a quick chat, I have attached my calendar for booking at your convenience:\nBook time with Syazwan HANIF (ITE): Office Hours: https://outlook.office.com/bookwithme/user/d2d0ebef929d4accbe27e1d5788b8df6@ite.edu.sg/meetingtype/tTLhlJ-CBkG1M97S3P-sRA2?anonymous&amp;ep=mlink\nLooking forward to hearing from you 🙂`;
+
   previewBox.textContent = fullMessage.trim();
 }
 
 document.getElementById("messageForm").addEventListener("input", updatePreview);
 
-let selectedInternshipPeriod = "";
+let selectedInternshipPeriods = [];
 
 document.querySelectorAll(".toggle-btn").forEach((button) => {
   button.addEventListener("click", () => {
+    const value = button.dataset.value;
     if (button.classList.contains("active")) {
       button.classList.remove("active");
-      selectedInternshipPeriod = "";
+      selectedInternshipPeriods = selectedInternshipPeriods.filter(
+        (v) => v !== value
+      );
     } else {
-      document
-        .querySelectorAll(".toggle-btn")
-        .forEach((btn) => btn.classList.remove("active"));
       button.classList.add("active");
-      selectedInternshipPeriod = button.dataset.value;
+      selectedInternshipPeriods.push(value);
     }
     updatePreview();
   });
