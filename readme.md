@@ -1,96 +1,106 @@
 # ✉️ Message Composer
 
-A local-first, browser-based tool to quickly generate and customize cold emails or internship proposals using structured inputs, reusable content chunks, and AI suggestions via local Ollama.
+Local-first tool to compose and customize internship outreach messages with structured inputs, reusable chunks, and AI help via your local Ollama.
 
 ## 🚀 Features
 
-- **Input Panel**: Enter dynamic contact and project details (e.g. contact name, company, internship period).
-- **Custom Chunks**: Drag, drop, reorder, and edit reusable message chunks (stored in `chunks.json`).
-- **Live Preview**: Instant message rendering on the right pane, always visible with smooth scrolling.
-- **Internship Period Picker**: Toggle buttons to choose standard internship dates.
-- **Category Filtering**: Filter visible chunks based on their categories using a dropdown.
-- **AI Autocomplete**: Generate content using your local Ollama LLM (e.g. LLaMA3, Mistral) for selected fields.
-- **Export Options**: Copy to clipboard or download the final message as `.txt` or `.md`.
+- **Structured Inputs**: Contact, job, student details, and internship period toggles.
+- **Reusable Chunks**: Add, edit, reorder blocks; persisted to `public/chunks.json`.
+- **Live Preview**: Always-on preview reflecting current inputs and chunk order.
+- **AI Assist (Ollama)**:
+  - “Generate Boilerplate” uses your local model with a tailored prompt.
+  - “Rewrite with AI” refines the preview text.
+- **Status Banner**: Shows active server port and Ollama/model availability.
+- **Export**: Copy or download as `.txt` or `.md`.
 
 ## 📦 File Structure
 
 ```
 message-composer/
 ├── public/
-│   └── chunks.json        # Stores reusable text chunks
-├── script.js              # Frontend logic & chunk rendering
-├── index.html             # Main UI layout
-├── styles.css             # Styling for UI and layout
-├── server.js              # Node.js backend (for static serving and Ollama proxy)
-├── run.sh                 # Start Ollama + Node server
-├── .gitignore
-└── README.md              # You're here!
+│   ├── index.html                 # UI
+│   ├── style.css                  # Styles
+│   ├── script.js                  # Frontend logic, chunks, status banner
+│   ├── boilerplate-generator.js   # Boilerplate generation button wiring
+│   └── chunks.json                # Stored chunks
+├── routes/
+│   ├── boilerplate.js             # /generate-boilerplate (Ollama + fallback)
+│   └── chunks.js                  # /api/chunks (load/save chunks)
+├── server.js                      # Express server (+ /status, /rewrite)
+├── run.sh                         # Starts Ollama, frees port 3000, starts server
+├── package.json
+└── readme.md
 ```
 
-## 🧠 Powered by Ollama (Local LLM)
+## 🧠 Powered by Ollama
 
-Message Composer uses your local [Ollama](https://ollama.com) instance to suggest or autocomplete text via API (default: `http://localhost:11434`). It sends structured prompts based on selected fields.
-
-### Example models:
-
-- `llama3`
-- `mistral`
-- `gemma`
+- API: `http://127.0.0.1:11434`
+- Default model (configurable): `llama3.2`
+- Change model via env: `OLLAMA_MODEL="llama3.2" ./run.sh`
+- The status banner checks reachability and whether the configured model is installed.
 
 ## 🛠️ Getting Started
 
-### 1. Clone this repo
+1) Clone and install
 
 ```bash
 git clone https://github.com/your-username/message-composer.git
 cd message-composer
-```
-
-### 2. Install dependencies
-
-```bash
 npm install
 ```
 
-### 3. Run the app
+2) Ensure Ollama is installed and a model is available
+
+```bash
+brew install ollama         # macOS (or see https://ollama.com/download)
+ollama pull llama3.2        # or your preferred model
+```
+
+3) Run the app
 
 ```bash
 chmod +x run.sh
 ./run.sh
 ```
 
-This will:
+What `./run.sh` does:
+- Kills any process on port 3000 (then starts the server on 3000)
+- Starts Ollama if not already running
+- Ensures your model is installed (defaults to `llama3.2`)
+- Opens `http://localhost:3000`
 
-- Start your local Ollama server (if installed)
-- Serve the project on: [http://localhost:3000](http://localhost:3000)
+## 🔧 Endpoints
 
-Make sure Ollama is already installed and your desired model is pulled:
+- `GET /status` – Server port and Ollama status, including installed models.
+- `POST /generate-boilerplate` – Generates a 1‑paragraph boilerplate using your model.
+- `POST /rewrite` – Rewrites the current preview using your model.
+- `GET/POST /api/chunks` – Load/save reusable chunks.
 
-```bash
-ollama run llama3
-```
+## 🧱 Prompting (Boilerplate)
 
-## 🧱 Customization
+The server instructs the model as an internship placement officer for ITE College West’s AI Applications course to return a concise, 1‑paragraph (3–5 sentences) boilerplate tailored to the provided job description, with specific guidance on tone, competencies, and acknowledging partial mismatches.
 
-- ✍️ Add/edit chunks via the UI (or directly in `chunks.json`)
-- 🧩 Add new categories to organize your content
-- 🧠 Edit prompt generation logic for different models in `script.js`
+## 🧰 Configuration
 
-## 📌 To-Do / Future Ideas
+- Select model at launch:
+  - `OLLAMA_MODEL="llama3.2" ./run.sh`
+  - Default in `run.sh`: `llama3.2`
+- Ollama API host: uses `http://127.0.0.1:11434`.
 
-- Save/load message templates
-- Authentication layer for multi-user usage
-- Support for local saving using IndexedDB or FileSystem API
-- Email integration (e.g. Gmail API)
-- Enhanced prompt templates for different message types
+## 🧪 Troubleshooting
 
-## Preview
-<img width="1509" height="823" alt="messagecomposer_example" src="https://github.com/user-attachments/assets/04ba16c5-b712-4d97-ae43-319b05bd777a" />
+- Port 3000 in use:
+  - `./run.sh` now auto‑kills listeners on 3000 before launching.
+- Banner shows “Ollama: not reachable”:
+  - Check `curl http://127.0.0.1:11434/api/tags` returns JSON.
+  - Ensure `ollama serve` is running (the script tries to start it).
+- Banner shows “Model 'X': not available”:
+  - `ollama list` to see installed names.
+  - `ollama pull X` (e.g., `ollama pull llama3.2`).
+  - Start with `OLLAMA_MODEL="X" ./run.sh`.
 
-## 🧑‍💻 Made by Syazwan Hanif
+## 🧑‍💻 Credits
 
-Built as a productivity booster for educators, internship coordinators, and cold outreach professionals. Feel free to fork, adapt, or collaborate.
+Built by Syazwan Hanif to streamline internship outreach. Fork, adapt, and collaborate!
 
----
-
-🧵 _Built with ❤️ using HTML, CSS, JS, Node.js, and Ollama._
+— Built with HTML, CSS, JS, Node.js, and Ollama.
