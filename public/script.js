@@ -15,20 +15,31 @@ const chunkModal = document.getElementById("chunkModal");
 const chunkText = document.getElementById("chunkText");
 const addChunkBtn = document.getElementById("addChunkBtn");
 
+// Model name from server status (fallback to llama3)
+let statusModelName = "llama3";
+
 let chunks = [];
 
 function fetchChunks() {
-  fetch("/chunks")
-    .then((res) => res.json())
+  fetch("/api/chunks")
+    .then((res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
     .then((data) => {
       chunks = data;
       renderChunks();
     })
-    .catch((err) => console.error("Failed to load chunks:", err));
+    .catch((err) => {
+      console.error("Failed to load chunks:", err);
+      // Keep UI usable even if API not available
+      chunks = [];
+      renderChunks();
+    });
 }
 
 function saveChunksToServer() {
-  fetch("/chunks", {
+  fetch("/api/chunks", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(chunks),
@@ -40,7 +51,9 @@ function renderChunks() {
   const searchTerm =
     document.getElementById("chunkSearch")?.value?.toLowerCase() || "";
   const selectedCategory =
-    document.getElementById("chunkCategoryFilter")?.value || "All";
+    document.getElementById("chunkCategoryFilter")?.value ||
+    document.getElementById("chunkFilter")?.value ||
+    "All";
   chunks
     .filter(
       (chunk) =>
@@ -138,7 +151,9 @@ function updatePreview() {
 
   // Add chunks filtered by selected category
   const selectedCategory =
-    document.getElementById("chunkCategoryFilter")?.value || "All";
+    document.getElementById("chunkCategoryFilter")?.value ||
+    document.getElementById("chunkFilter")?.value ||
+    "All";
   chunks
     .filter(
       (chunk) =>
@@ -199,7 +214,8 @@ document.getElementById("cancelChunk").addEventListener("click", () => {
 document.getElementById("saveChunk").addEventListener("click", () => {
   const text = chunkText.value.trim();
   if (text) {
-    const category = document.getElementById("chunkCategory").value;
+    const category =
+      document.getElementById("chunkCategory")?.value || "Default";
     chunks.push({ id: Date.now(), text, category });
     chunkModal.classList.add("hidden");
     saveChunksToServer();
@@ -210,12 +226,13 @@ function editChunk(id) {
   const chunk = chunks.find((c) => c.id === id);
   if (chunk) {
     chunkText.value = chunk.text;
-    document.getElementById("chunkCategory").value =
-      chunk.category || "Opening";
+    const catEl = document.getElementById("chunkCategory");
+    if (catEl) catEl.value = chunk.category || "Default";
     chunkModal.classList.remove("hidden");
     document.getElementById("saveChunk").onclick = () => {
       chunk.text = chunkText.value.trim();
-      chunk.category = document.getElementById("chunkCategory").value;
+      chunk.category =
+        document.getElementById("chunkCategory")?.value || chunk.category;
       chunkModal.classList.add("hidden");
       saveChunksToServer();
     };
@@ -250,9 +267,8 @@ function downloadFile(content, filename) {
 
 fetchChunks();
 document.getElementById("chunkSearch")?.addEventListener("input", renderChunks);
-document
-  .getElementById("chunkCategoryFilter")
-  ?.addEventListener("change", renderChunks);
+document.getElementById("chunkCategoryFilter")?.addEventListener("change", renderChunks);
+document.getElementById("chunkFilter")?.addEventListener("change", renderChunks);
 
 // Rewrite functionality using /rewrite API and Ollama
 document.getElementById("rewriteBtn")?.addEventListener("click", async () => {
@@ -273,7 +289,7 @@ document.getElementById("rewriteBtn")?.addEventListener("click", async () => {
     console.error("Rewrite error:", err);
     alert("Something went wrong while rewriting the message.");
   }
-});
+  });
 
 document
   .getElementById("rewriteOllamaBtn")
@@ -281,11 +297,11 @@ document
     const originalText = previewBox.textContent;
 
     try {
-      const response = await fetch("http://localhost:11434/api/generate", {
+      const response = await fetch("http://127.0.0.1:11434/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama3", // replace with your running Ollama model
+          model: statusModelName, // use model advertised by server
           stream: false,
           prompt: `Please improve the following cold outreach message to make it more concise, clear, and professional:\n\n${originalText}`,
         }),
@@ -300,3 +316,28 @@ document
       alert("Failed to get rewritten text from Ollama.");
     }
   });
+
+// --- Status banner ---
+async function refreshAppStatus() {
+  const el = document.getElementById("appStatus");
+  if (!el) return;
+  try {
+    const r = await fetch("/status");
+    if (!r.ok) throw new Error("status not ok");
+    const s = await r.json();
+    const port = s?.port || window.location.port || "unknown";
+    const o = s?.ollama || {};
+    const reach = o.reachable ? "reachable" : "not reachable";
+    const model = o.model || "llama3";
+    const ok = o.modelAvailable ? "available" : "not available";
+    statusModelName = model;
+    el.textContent = `Server port: ${port} • Ollama: ${reach} • Model '${model}': ${ok}`;
+  } catch (e) {
+    const port = window.location.port || "unknown";
+    el.textContent = `Server port: ${port} • Ollama: status unavailable`;
+  }
+}
+
+// Initial and periodic refresh
+refreshAppStatus();
+setInterval(refreshAppStatus, 10000);

@@ -8,6 +8,7 @@
   </head>
   <body>
     <div class="container">
+      <div id="appStatus" class="status-bar">Checking server status…</div>
       <h1>📨 Internship Message Composer</h1>
 
       <div class="main-content" style="display: flex; gap: 2rem">
@@ -96,6 +97,36 @@
                 placeholder="Write a brief pitch or introduction for the student(s)"
               ></textarea>
             </div>
+            <br />
+            <div class="field-group">
+              <label for="job_description">Job Description</label>
+              <textarea
+                id="job_description"
+                placeholder="Paste job description here to generate boilerplate pitch"
+                rows="6"
+              ></textarea>
+              <button
+                type="button"
+                id="generateBoilerplate"
+                style="margin-top: 0.5rem"
+              >
+                🧠 Generate Boilerplate
+              </button>
+              <div
+                id="generateStatus"
+                style="margin-top: 0.5rem; font-weight: bold"
+              ></div>
+            </div>
+            <br />
+            <div class="field-group">
+              <label for="boilerplateOutput">Generated Boilerplate</label>
+              <textarea
+                id="boilerplateOutput"
+                name="boilerplateOutput"
+                readonly
+                rows="3"
+              ></textarea>
+            </div>
           </form>
 
           <div class="tools">
@@ -153,5 +184,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="script.js"></script>
+    <script src="boilerplate-generator.js" defer></script>
   </body>
 </html>
