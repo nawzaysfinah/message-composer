@@ -140,7 +140,28 @@ textarea {
   background: #fff;
   padding: 2rem;
   border-radius: 6px;
-  width: 400px;
+  /* Make editor nearly full page */
+  width: min(1000px, 95vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Large textarea for editing chunks */
+#chunkText {
+  width: 100%;
+  min-height: 60vh;
+  height: 60vh;
+  resize: vertical;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  align-self: flex-end;
 }
 
 .hidden {

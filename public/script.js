@@ -19,6 +19,59 @@ const addChunkBtn = document.getElementById("addChunkBtn");
 let statusModelName = "llama3";
 
 let chunks = [];
+let latestPlain = "";
+let latestHTML = "";
+
+// --- Helpers: safe HTML + linkification ---
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function encodeAttr(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// Convert URLs (http/https and www.) and emails to anchors while escaping other text
+function linkifyAndEscape(text) {
+  const tokenRegex =
+    /((?:https?:\/\/|www\.)[^\s]+)|([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
+  let result = [];
+  let lastIndex = 0;
+  // Correct callback params: match, p1(url/www), p2(email), offset
+  text.replace(tokenRegex, (match, urlOrWww, email, offset) => {
+    const before = text.slice(lastIndex, offset);
+    if (before) result.push(escapeHtml(before));
+    if (urlOrWww) {
+      const isWww = urlOrWww.startsWith("www.");
+      const hrefRaw = (isWww ? `https://${urlOrWww}` : urlOrWww).replace(
+        /&amp;/g,
+        "&"
+      );
+      const href = encodeAttr(hrefRaw);
+      const display = escapeHtml(urlOrWww);
+      result.push(
+        `<a href="${href}" target="_blank" rel="noopener noreferrer">${display}</a>`
+      );
+    } else if (email) {
+      const safeEmail = encodeAttr(email);
+      result.push(`<a href="mailto:${safeEmail}">${escapeHtml(email)}</a>`);
+    }
+    lastIndex = offset + match.length;
+    return match;
+  });
+  const tail = text.slice(lastIndex);
+  if (tail) result.push(escapeHtml(tail));
+  return result.join("");
+}
 
 function fetchChunks() {
   fetch("/api/chunks")
@@ -50,15 +103,17 @@ function renderChunks() {
   chunkList.innerHTML = "";
   const searchTerm =
     document.getElementById("chunkSearch")?.value?.toLowerCase() || "";
-  const selectedCategory =
+  const selectedCategoryRaw =
     document.getElementById("chunkCategoryFilter")?.value ||
     document.getElementById("chunkFilter")?.value ||
-    "All";
+    "all";
+  const selectedCategory = String(selectedCategoryRaw).toLowerCase();
   chunks
     .filter(
       (chunk) =>
         chunk.text.toLowerCase().includes(searchTerm) &&
-        (selectedCategory === "All" || chunk.category === selectedCategory)
+        (selectedCategory === "all" ||
+          String(chunk.category || "").toLowerCase() === selectedCategory)
     )
     .forEach((chunk, index) => {
       const div = document.createElement("div");
@@ -92,21 +147,17 @@ function updatePreview() {
     intro += `Hi ${formData.contact_name},\n\n`;
   }
 
-  let sentence = `I'm reaching out`;
-
-  if (formData.company_name || formData.job_title) {
-    sentence += ` to explore potential internship opportunities`;
-
-    if (formData.company_name && formData.job_title) {
-      sentence += ` at ${formData.company_name}, for the ${formData.job_title} role`;
-    } else if (formData.company_name) {
-      sentence += ` at ${formData.company_name}`;
-    } else if (formData.job_title) {
-      sentence += ` for the ${formData.job_title} role`;
-    }
+  let sentence = "I'm reaching out";
+  if (formData.company_name && formData.job_title) {
+    sentence += ` regarding an internship opportunity for the ${formData.job_title} role at ${formData.company_name}.`;
+  } else if (formData.company_name) {
+    sentence += ` regarding internship opportunities at ${formData.company_name}.`;
+  } else if (formData.job_title) {
+    sentence += ` regarding an internship opportunity for the ${formData.job_title} role.`;
+  } else {
+    sentence += ` regarding internship opportunities.`;
   }
-
-  sentence += `.\n\n`;
+  sentence += `\n\n`;
 
   // Student pitch
   let pitch = "";
@@ -115,20 +166,17 @@ function updatePreview() {
     formData.project_title ||
     formData.student_pitch
   ) {
-    pitch += "I have a student";
     if (formData.student_name) {
-      pitch += `, ${formData.student_name}`;
+      pitch += `I'd like to recommend ${formData.student_name}, a student from ITE College West's Higher Nitec in AI Applications.`;
+    } else {
+      pitch += `I'd like to recommend a student from ITE College West's Higher Nitec in AI Applications.`;
     }
     if (formData.project_title) {
-      pitch += `, who recently worked on a project titled "${formData.project_title}"`;
+      pitch += ` They recently completed a project titled "${formData.project_title}".`;
     }
-    pitch += `. `;
-
     if (formData.student_pitch) {
-      pitch += formData.student_pitch;
-      if (!formData.student_pitch.trim().endsWith(".")) {
-        pitch += ".";
-      }
+      const sp = formData.student_pitch.trim();
+      pitch += ` ${sp}${/[.!?]$/.test(sp) ? "" : "."}`;
     }
 
     pitch += "\n\n";
@@ -137,7 +185,7 @@ function updatePreview() {
   // Job link sentence
   let link = "";
   if (formData.job_link) {
-    link = `Here is the job listing posted by your team: ${formData.job_link}\n\n`;
+    link = `Here is the role I'm referring to: ${formData.job_link}\n\n`;
   }
 
   // Internship period
@@ -150,22 +198,26 @@ function updatePreview() {
   let fullMessage = intro + sentence + pitch + link + intern;
 
   // Add chunks filtered by selected category
-  const selectedCategory =
+  const selectedCategoryRaw =
     document.getElementById("chunkCategoryFilter")?.value ||
     document.getElementById("chunkFilter")?.value ||
-    "All";
+    "all";
+  const selectedCategory = String(selectedCategoryRaw).toLowerCase();
   chunks
     .filter(
       (chunk) =>
-        selectedCategory === "All" || chunk.category === selectedCategory
+        selectedCategory === "all" ||
+        String(chunk.category || "").toLowerCase() === selectedCategory
     )
     .forEach((chunk) => {
       fullMessage += chunk.text + "\n\n";
     });
 
-  fullMessage += `You can learn more about the course here:\n👉 Higher Nitec in AI Applications – Course Overview: https://www.ite.edu.sg/courses/course-finder/course/higher-nitec-in-ai-applications\nIf you're open to a quick chat, I have attached my calendar for booking at your convenience:\nBook time with Syazwan HANIF (ITE): Office Hours: https://outlook.office.com/bookwithme/user/d2d0ebef929d4accbe27e1d5788b8df6@ite.edu.sg/meetingtype/tTLhlJ-CBkG1M97S3P-sRA2?anonymous&amp;ep=mlink\nLooking forward to hearing from you 🙂`;
-
-  previewBox.textContent = fullMessage.trim();
+  const finalText = fullMessage.trim();
+  const html = linkifyAndEscape(finalText).replace(/\n/g, "<br>");
+  previewBox.innerHTML = html;
+  latestPlain = finalText;
+  latestHTML = html;
 }
 
 document.getElementById("messageForm").addEventListener("input", updatePreview);
@@ -245,20 +297,52 @@ function deleteChunk(id) {
 }
 
 // Export & Copy
-document.getElementById("copyBtn").addEventListener("click", () => {
-  navigator.clipboard.writeText(previewBox.textContent);
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  const html = previewBox.innerHTML;
+  const plain = previewBox.innerText;
+  try {
+    if (navigator.clipboard && window.ClipboardItem) {
+      const item = new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([plain], { type: "text/plain" }),
+      });
+      await navigator.clipboard.write([item]);
+    } else {
+      await navigator.clipboard.writeText(plain);
+    }
+  } catch (e) {
+    console.error("Clipboard write failed, falling back to text:", e);
+    try {
+      await navigator.clipboard.writeText(plain);
+    } catch {}
+  }
 });
 
 document.getElementById("downloadTxt").addEventListener("click", () => {
-  downloadFile(previewBox.textContent, "message.txt");
+  downloadFile(latestPlain, "message.txt", "text/plain;charset=utf-8");
 });
+
+// Convert plain text with URLs to Markdown with links
+function toMarkdown(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.replace(urlRegex, (m) => {
+    const u = m.replace(/&amp;/g, "&");
+    return `[${u}](${u})`;
+  });
+}
 
 document.getElementById("downloadMd").addEventListener("click", () => {
-  downloadFile(previewBox.textContent, "message.md");
+  const md = toMarkdown(latestPlain);
+  downloadFile(md, "message.md", "text/markdown;charset=utf-8");
 });
 
-function downloadFile(content, filename) {
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+document.getElementById("downloadHtml").addEventListener("click", () => {
+  const htmlDoc = `<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Message</title></head><body>${latestHTML}</body></html>`;
+  downloadFile(htmlDoc, "message.html", "text/html;charset=utf-8");
+});
+
+function downloadFile(content, filename, mime = "text/plain;charset=utf-8") {
+  const blob = new Blob([content], { type: mime });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = filename;
@@ -267,12 +351,16 @@ function downloadFile(content, filename) {
 
 fetchChunks();
 document.getElementById("chunkSearch")?.addEventListener("input", renderChunks);
-document.getElementById("chunkCategoryFilter")?.addEventListener("change", renderChunks);
-document.getElementById("chunkFilter")?.addEventListener("change", renderChunks);
+document
+  .getElementById("chunkCategoryFilter")
+  ?.addEventListener("change", renderChunks);
+document
+  .getElementById("chunkFilter")
+  ?.addEventListener("change", renderChunks);
 
 // Rewrite functionality using /rewrite API and Ollama
 document.getElementById("rewriteBtn")?.addEventListener("click", async () => {
-  const originalText = previewBox.textContent;
+  const originalText = previewBox.innerText;
 
   try {
     const response = await fetch("/rewrite", {
@@ -284,17 +372,21 @@ document.getElementById("rewriteBtn")?.addEventListener("click", async () => {
     if (!response.ok) throw new Error("Failed to rewrite message");
 
     const data = await response.json();
-    previewBox.textContent = data.rewritten.trim();
+    const rewritten = data.rewritten.trim();
+    const html = linkifyAndEscape(rewritten).replace(/\n/g, "<br>");
+    previewBox.innerHTML = html;
+    latestPlain = rewritten;
+    latestHTML = html;
   } catch (err) {
     console.error("Rewrite error:", err);
     alert("Something went wrong while rewriting the message.");
   }
-  });
+});
 
 document
   .getElementById("rewriteOllamaBtn")
   ?.addEventListener("click", async () => {
-    const originalText = previewBox.textContent;
+    const originalText = previewBox.innerText;
 
     try {
       const response = await fetch("http://127.0.0.1:11434/api/generate", {
@@ -310,7 +402,11 @@ document
       if (!response.ok) throw new Error("Failed to rewrite with Ollama");
 
       const data = await response.json();
-      previewBox.textContent = data.response.trim();
+      const rewritten = data.response.trim();
+      const html = linkifyAndEscape(rewritten).replace(/\n/g, "<br>");
+      previewBox.innerHTML = html;
+      latestPlain = rewritten;
+      latestHTML = html;
     } catch (err) {
       console.error("Ollama rewrite error:", err);
       alert("Failed to get rewritten text from Ollama.");
